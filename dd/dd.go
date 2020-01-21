@@ -11,12 +11,15 @@ type CopySession struct {
 	sourceFile *os.File
 	targetFile *os.File
 	offset     uint64
+	limit      uint64
 }
 
 func DoCopy(config settings.Settings, moveProgressCallback func(float32)) error {
-	cs := CopySession{}
+	cs := CopySession{
+		offset: config.Offset,
+		limit:  config.Limit,
+	}
 	defer cs.Close()
-	cs.offset = config.Offset
 	e := cs.OpenSourceAndTarget(config)
 	if e != nil {
 		return e
@@ -31,15 +34,21 @@ func (c *CopySession) DoCopyInternal(moveProgressCallback func(float32)) error {
 		return err
 	}
 
-	bufferSize := 1024
+	var bufferSize uint64 = 1024
+	if c.limit < bufferSize {
+		bufferSize = c.limit
+	}
+
 	var currentPosition int64 = 0
+	bytesToRead := c.limit
 	buffer := make([]byte, bufferSize)
 	for {
 		readCount, e := c.sourceFile.Read(buffer)
-		if e == io.EOF {
+		if e == io.EOF || bytesToRead <= 0 {
 			break
 		}
 
+		bytesToRead -= uint64(readCount)
 		_, e = c.targetFile.Write(buffer[0:readCount])
 		if e != nil {
 			return e
@@ -80,7 +89,7 @@ func (c *CopySession) OpenSourceAndTarget(config settings.Settings) error {
 	return nil
 }
 
-func (c *CopySession) PrepareCopying() (int64, error) {
+func (c *CopySession) PrepareCopying() (uint64, error) {
 	sourceStat, e := c.sourceFile.Stat()
 	if e != nil {
 		return 0, e
@@ -100,6 +109,9 @@ func (c *CopySession) PrepareCopying() (int64, error) {
 		return 0, e
 	}
 
-	targetSize := fi.Size() - int64(c.offset)
-	return targetSize, nil
+	if c.limit != 0 {
+		return c.limit, nil
+	} else {
+		return uint64(fi.Size()) - c.offset, nil
+	}
 }
