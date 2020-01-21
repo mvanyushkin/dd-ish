@@ -35,12 +35,12 @@ func (c *CopySession) DoCopyInternal(moveProgressCallback func(float32)) error {
 	}
 
 	var bufferSize uint64 = 1024
-	if c.limit < bufferSize {
+	if c.limit != 0 && c.limit < bufferSize {
 		bufferSize = c.limit
 	}
 
 	var currentPosition int64 = 0
-	bytesToRead := c.limit
+	bytesToRead := targetSize
 	buffer := make([]byte, bufferSize)
 	for {
 		readCount, e := c.sourceFile.Read(buffer)
