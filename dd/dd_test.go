@@ -31,7 +31,8 @@ func TestSmoke(t *testing.T) {
 	targetStat, e := os.Stat(targetPath)
 
 	assert.Equal(t, sourceStat.Size(), targetStat.Size())
-	os.Remove(testSourceFileName)
+	os.Remove(sourcePath)
+	os.Remove(targetPath)
 }
 
 func TestWhenSourceDoesntExist(t *testing.T) {
@@ -94,7 +95,8 @@ func TestWhenOffsetGreaterThanSourceFileSize(t *testing.T) {
 	}, func(f float32) {})
 
 	assert.NotNil(t, e)
-	os.Remove(testSourceFileName)
+	os.Remove(sourcePath)
+	os.Remove(targetPath)
 }
 
 func TestWhenOffsetEqualToSourceSourceFileSize(t *testing.T) {
@@ -115,5 +117,6 @@ func TestWhenOffsetEqualToSourceSourceFileSize(t *testing.T) {
 	}, func(f float32) {})
 
 	assert.NotNil(t, e)
-	os.Remove(testSourceFileName)
+	os.Remove(sourcePath)
+	os.Remove(targetPath)
 }
